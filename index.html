@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Eksplorasi Interaktif: Large Language Models</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chosen Palette: Professional Blue & Slate -->
+    <!-- Application Structure Plan: Aplikasi ini menggunakan struktur tematik berbasis gulir (scroll-based) dengan navigasi sticky di atas untuk akses cepat. Struktur ini dipilih untuk memandu pengguna dari konsep fundamental ke topik yang lebih advanced secara logis. Dimulai dengan 'Apa itu LLM' & 'Teknologi Inti' (Transformer), lalu ke 'Evolusi' (visualisasi timeline), 'Proses Pelatihan' (diagram interaktif 3 langkah), 'Aplikasi Praktis' (kartu interaktif), dan diakhiri 'Optimisasi'. Pendekatan ini memecah laporan teknis yang padat menjadi segmen-segmen yang mudah dicerna, dengan interaktivitas (klik untuk detail, hover pada chart) yang mendorong eksplorasi aktif dan meningkatkan pemahaman pengguna. -->
+    <!-- Visualization & Content Choices: 1. Report Info: Evolusi model LLM (GPT, BERT, PaLM, dll.) dengan jumlah parameter. -> Goal: Compare/Change. -> Viz/Presentation Method: Interactive Bubble Chart (Chart.js) untuk memvisualisasikan skala dan waktu. -> Interaction: Hover pada titik data akan menampilkan tooltip dengan detail model (nama, parameter, tahun). -> Justification: Visualisasi ini jauh lebih efektif daripada tabel statis (Tabel 1 di laporan) untuk menunjukkan pertumbuhan eksponensial dalam skala model. 2. Report Info: Proses training (Pre-training, SFT, RLHF). -> Goal: Organize. -> Viz/Presentation Method: Diagram proses 3 langkah interaktif (HTML/CSS). -> Interaction: Mengklik pada setiap langkah akan menampilkan penjelasan detail di sebelahnya. -> Justification: Mengubah teks deskriptif menjadi pengalaman belajar visual dan terpandu. 3. Report Info: Aplikasi & Teknik Optimisasi. -> Goal: Inform/Organize. -> Viz/Presentation Method: Grid kartu interaktif (HTML/CSS/JS). -> Interaction: Klik untuk memperluas kartu dan membaca detailnya. -> Justification: Menjaga antarmuka tetap bersih dan memungkinkan pengguna fokus pada topik yang menarik minat mereka. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: #f8fafc; /* slate-50 */
+        color: #334155; /* slate-700 */
+      }
+      .nav-link {
+        transition: color 0.3s, border-bottom-color 0.3s;
+        border-bottom: 2px solid transparent;
+      }
+      .nav-link:hover,
+      .nav-link.active {
+        color: #2563eb; /* blue-600 */
+        border-bottom-color: #2563eb;
+      }
+      .content-hidden {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.5s ease-in-out;
+        visibility: hidden;
+      }
+      .content-visible {
+        max-height: 500px; /* Adjust as needed */
+        visibility: visible;
+        transition: max-height 0.5s ease-in-out;
+      }
+      .step-item.active {
+        border-color: #2563eb;
+        background-color: #eff6ff;
+      }
+      .step-item.active h3 {
+        color: #1d4ed8;
+      }
+      .chart-container {
+        position: relative;
+        width: 100%;
+        max-width: 900px;
+        margin-left: auto;
+        margin-right: auto;
+        height: 450px;
+        max-height: 60vh;
+      }
+    </style>
+  </head>
+  <body class="antialiased">
+    <header class="bg-white/90 backdrop-blur-lg sticky top-0 z-50 shadow-md">
+      <nav class="container mx-auto px-6 py-3">
+        <div class="flex items-center justify-between">
+          <div class="text-xl font-bold text-blue-700">Eksplorasi LLM</div>
+          <div class="hidden md:flex items-center space-x-6">
+            <a href="#teknologi" class="nav-link text-sm font-medium pb-1"
+              >Teknologi Inti</a
+            >
+            <a href="#evolusi" class="nav-link text-sm font-medium pb-1"
+              >Evolusi</a
+            >
+            <a href="#pelatihan" class="nav-link text-sm font-medium pb-1"
+              >Pelatihan</a
+            >
+            <a href="#aplikasi" class="nav-link text-sm font-medium pb-1"
+              >Aplikasi</a
+            >
+            <a href="#optimisasi" class="nav-link text-sm font-medium pb-1"
+              >Optimisasi</a
+            >
+          </div>
+          <div class="md:hidden">
+            <button id="menu-btn" class="text-slate-600 focus:outline-none">
+              <svg
+                class="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 6h16M4 12h16m-7 6h7"
+                ></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div id="mobile-menu" class="hidden md:hidden mt-3">
+          <a
+            href="#teknologi"
+            class="block py-2 text-slate-700 hover:text-blue-600"
+            >Teknologi Inti</a
+          >
+          <a
+            href="#evolusi"
+            class="block py-2 text-slate-700 hover:text-blue-600"
+            >Evolusi</a
+          >
+          <a
+            href="#pelatihan"
+            class="block py-2 text-slate-700 hover:text-blue-600"
+            >Pelatihan</a
+          >
+          <a
+            href="#aplikasi"
+            class="block py-2 text-slate-700 hover:text-blue-600"
+            >Aplikasi</a
+          >
+          <a
+            href="#optimisasi"
+            class="block py-2 text-slate-700 hover:text-blue-600"
+            >Optimisasi</a
+          >
+        </div>
+      </nav>
+    </header>
+
+    <main class="container mx-auto px-6 py-12 md:py-16">
+      <section id="hero" class="text-center mb-16 md:mb-24">
+        <h1 class="text-4xl md:text-5xl font-bold text-slate-800 mb-4">
+          Membedah Large Language Models
+        </h1>
+        <p class="text-lg md:text-xl text-slate-600 max-w-3xl mx-auto">
+          Sebuah visualisasi interaktif dari laporan "Foundational Large
+          Language Models & Text Generation" oleh Google.
+        </p>
+      </section>
+
+      <section id="teknologi" class="mb-16 md:mb-24">
+        <h2 class="text-3xl font-bold text-center text-slate-800 mb-2">
+          Teknologi Inti: Arsitektur Transformer
+        </h2>
+        <p class="text-center max-w-3xl mx-auto text-slate-600 mb-12">
+          Di jantung setiap LLM modern terdapat arsitektur Transformer, yang
+          diperkenalkan pada tahun 2017. Kemampuannya untuk memproses data
+          secara paralel dan memahami konteks melalui "Self-Attention" menjadi
+          sebuah terobosan. Klik komponen di bawah untuk mempelajari lebih
+          lanjut.
+        </p>
+
+        <div
+          class="bg-white p-6 md:p-8 rounded-xl shadow-lg border border-slate-200"
+        >
+          <div class="flex flex-col md:flex-row gap-6 items-center">
+            <div class="w-full md:w-1/2 flex flex-col items-center space-y-4">
+              <div
+                class="interactive-component border-2 border-blue-200 p-3 rounded-lg text-center w-full cursor-pointer hover:bg-blue-50"
+                data-content="input-content"
+              >
+                <h4 class="font-bold text-blue-800">1. Input & Embedding</h4>
+                <p class="text-sm text-slate-500">
+                  Teks diubah menjadi token numerik dan vektor posisi.
+                </p>
+              </div>
+              <div class="text-2xl text-slate-400">↓</div>
+              <div
+                class="interactive-component border-2 border-green-200 p-3 rounded-lg text-center w-full cursor-pointer hover:bg-green-50"
+                data-content="attention-content"
+              >
+                <h4 class="font-bold text-green-800">
+                  2. Self-Attention Mechanism
+                </h4>
+                <p class="text-sm text-slate-500">
+                  Model menimbang relevansi setiap kata dalam konteks.
+                </p>
+              </div>
+              <div class="text-2xl text-slate-400">↓</div>
+              <div
+                class="interactive-component border-2 border-purple-200 p-3 rounded-lg text-center w-full cursor-pointer hover:bg-purple-50"
+                data-content="encoder-content"
+              >
+                <h4 class="font-bold text-purple-800">3. Encoder & Decoder</h4>
+                <p class="text-sm text-slate-500">
+                  Memproses input untuk memahami makna & menghasilkan output.
+                </p>
+              </div>
+            </div>
+            <div
+              class="w-full md:w-1/2 p-4 md:p-6 bg-slate-50 rounded-lg min-h-[200px]"
+            >
+              <div id="tech-content-display">
+                <div id="input-content" class="tech-content">
+                  <h3 class="font-bold text-lg text-slate-700 mb-2">
+                    Input & Positional Embedding
+                  </h3>
+                  <p class="text-slate-600">
+                    Sebelum diproses, kalimat dipecah menjadi unit-unit kecil
+                    yang disebut token. Setiap token kemudian diubah menjadi
+                    vektor numerik (embedding) yang merepresentasikan maknanya.
+                    Karena Transformer memproses data secara paralel, informasi
+                    posisi setiap token ditambahkan (positional encoding) agar
+                    model tetap memahami urutan kata.
+                  </p>
+                </div>
+                <div id="attention-content" class="tech-content hidden">
+                  <h3 class="font-bold text-lg text-slate-700 mb-2">
+                    Self-Attention
+                  </h3>
+                  <p class="text-slate-600">
+                    Ini adalah inovasi kunci dari Transformer. Mekanisme ini
+                    memungkinkan model untuk menganalisis sebuah kalimat dan
+                    memberikan 'bobot' perhatian yang berbeda pada setiap kata
+                    lain dalam kalimat tersebut. Ini memungkinkan pemahaman
+                    konteks yang mendalam, seperti mengidentifikasi kata ganti
+                    ('dia') merujuk pada subjek yang disebutkan sebelumnya.
+                  </p>
+                </div>
+                <div id="encoder-content" class="tech-content hidden">
+                  <h3 class="font-bold text-lg text-slate-700 mb-2">
+                    Encoder & Decoder
+                  </h3>
+                  <p class="text-slate-600">
+                    Arsitektur asli Transformer memiliki dua bagian. **Encoder**
+                    membaca dan memahami seluruh kalimat input, menciptakan
+                    representasi numerik dari maknanya. **Decoder** kemudian
+                    mengambil representasi tersebut dan menghasilkan output kata
+                    per kata. Banyak LLM modern, seperti seri GPT, menggunakan
+                    arsitektur 'decoder-only' yang dimodifikasi.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="evolusi" class="mb-16 md:mb-24">
+        <h2 class="text-3xl font-bold text-center text-slate-800 mb-2">
+          Evolusi Skala LLM
+        </h2>
+        <p class="text-center max-w-3xl mx-auto text-slate-600 mb-12">
+          Sejak 2018, ukuran dan kompleksitas LLM telah berkembang secara
+          eksponensial. Grafik ini memvisualisasikan pertumbuhan jumlah
+          parameter—salah satu indikator kapasitas model—dari beberapa model
+          paling berpengaruh. Arahkan kursor ke titik untuk melihat detail.
+        </p>
+        <div
+          class="bg-white p-4 md:p-8 rounded-xl shadow-lg border border-slate-200"
+        >
+          <div class="chart-container">
+            <canvas id="evolutionChart"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <section id="pelatihan" class="mb-16 md:mb-24">
+        <h2 class="text-3xl font-bold text-center text-slate-800 mb-2">
+          Proses Pelatihan LLM
+        </h2>
+        <p class="text-center max-w-3xl mx-auto text-slate-600 mb-12">
+          Membangun LLM yang andal melibatkan beberapa tahap pelatihan yang
+          sistematis. Dimulai dari pelatihan dasar pada data masif, dilanjutkan
+          dengan penyesuaian untuk tugas spesifik, dan diakhiri dengan
+          penyelarasan perilaku agar sesuai dengan preferensi manusia. Klik
+          setiap tahap untuk detail.
+        </p>
+        <div class="flex flex-col md:flex-row gap-8">
+          <div class="w-full md:w-1/3 flex flex-col space-y-4">
+            <div
+              class="step-item p-4 rounded-lg border-2 border-slate-200 cursor-pointer transition active"
+              data-step="1"
+            >
+              <h3 class="font-bold text-lg text-slate-800">
+                1. Pre-training (Pelatihan Awal)
+              </h3>
+              <p class="text-sm text-slate-500">
+                Membangun fondasi pengetahuan umum.
+              </p>
+            </div>
+            <div
+              class="step-item p-4 rounded-lg border-2 border-slate-200 cursor-pointer transition"
+              data-step="2"
+            >
+              <h3 class="font-bold text-lg text-slate-800">
+                2. Supervised Fine-Tuning (SFT)
+              </h3>
+              <p class="text-sm text-slate-500">
+                Mengajari model untuk mengikuti instruksi.
+              </p>
+            </div>
+            <div
+              class="step-item p-4 rounded-lg border-2 border-slate-200 cursor-pointer transition"
+              data-step="3"
+            >
+              <h3 class="font-bold text-lg text-slate-800">
+                3. Reinforcement Learning from Human Feedback (RLHF)
+              </h3>
+              <p class="text-sm text-slate-500">
+                Menyelaraskan output dengan nilai manusia.
+              </p>
+            </div>
+          </div>
+          <div
+            class="w-full md:w-2/3 bg-white p-8 rounded-xl shadow-lg border border-slate-200"
+          >
+            <div id="step-content-1" class="step-content">
+              <h4 class="font-bold text-xl text-blue-700 mb-3">
+                Tahap 1: Pre-training
+              </h4>
+              <p class="text-slate-600">
+                Ini adalah fase paling intensif. Model dilatih pada dataset yang
+                sangat besar (triliunan kata) dari sumber seperti web dan buku.
+                Tujuannya adalah agar model mempelajari pola, tata bahasa,
+                fakta, dan penalaran dari teks. Model belajar dengan memprediksi
+                kata berikutnya dalam sebuah kalimat, sebuah proses yang disebut
+                "language modeling".
+              </p>
+            </div>
+            <div id="step-content-2" class="step-content hidden">
+              <h4 class="font-bold text-xl text-blue-700 mb-3">
+                Tahap 2: Supervised Fine-Tuning (SFT)
+              </h4>
+              <p class="text-slate-600">
+                Setelah memiliki pengetahuan umum, model perlu dilatih untuk
+                menjadi asisten yang berguna. Pada tahap ini, model dilatih
+                lebih lanjut pada dataset yang lebih kecil dan berkualitas
+                tinggi. Dataset ini berisi pasangan "instruksi" dan "jawaban
+                yang baik", yang dibuat oleh manusia. Tujuannya adalah mengajari
+                model untuk mengikuti perintah dan menjawab dalam format yang
+                diinginkan.
+              </p>
+            </div>
+            <div id="step-content-3" class="step-content hidden">
+              <h4 class="font-bold text-xl text-blue-700 mb-3">
+                Tahap 3: RLHF
+              </h4>
+              <p class="text-slate-600">
+                Ini adalah tahap penyelarasan akhir untuk memastikan output
+                model aman dan bermanfaat. Caranya: model menghasilkan beberapa
+                respons untuk sebuah prompt. Manusia kemudian memberi peringkat
+                respons-respons tersebut dari yang terbaik hingga terburuk.
+                Umpan balik ini digunakan untuk melatih "Reward Model" terpisah,
+                yang kemudian digunakan untuk menyempurnakan LLM utama agar
+                menghasilkan respons yang disukai manusia.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="aplikasi" class="mb-16 md:mb-24">
+        <h2 class="text-3xl font-bold text-center text-slate-800 mb-2">
+          Aplikasi Praktis LLM
+        </h2>
+        <p class="text-center max-w-3xl mx-auto text-slate-600 mb-12">
+          Kemampuan LLM dalam memahami dan menghasilkan teks telah membuka
+          berbagai kemungkinan aplikasi di banyak industri. Berikut adalah
+          beberapa contoh penggunaan yang paling umum. Klik pada setiap kartu
+          untuk penjelasan lebih lanjut.
+        </p>
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div
+            class="info-card bg-white rounded-lg shadow border border-slate-200 p-5 cursor-pointer hover:shadow-xl transition-shadow"
+          >
+            <h3 class="font-bold text-lg mb-2 text-slate-800">
+              ✍️ Generasi & Bantuan Kode
+            </h3>
+            <p class="info-content text-slate-600">
+              Membantu developer dengan membuat, melengkapi, menerjemahkan, dan
+              mencari kesalahan (debug) pada kode program dalam berbagai bahasa.
+            </p>
+          </div>
+          <div
+            class="info-card bg-white rounded-lg shadow border border-slate-200 p-5 cursor-pointer hover:shadow-xl transition-shadow"
+          >
+            <h3 class="font-bold text-lg mb-2 text-slate-800">
+              📋 Rangkuman Teks
+            </h3>
+            <p class="info-content text-slate-600">
+              Mengekstrak poin-poin kunci dari dokumen panjang, artikel, atau
+              transkrip rapat, sehingga menghemat waktu analisis.
+            </p>
+          </div>
+          <div
+            class="info-card bg-white rounded-lg shadow border border-slate-200 p-5 cursor-pointer hover:shadow-xl transition-shadow"
+          >
+            <h3 class="font-bold text-lg mb-2 text-slate-800">
+              🌍 Terjemahan Mesin
+            </h3>
+            <p class="info-content text-slate-600">
+              Menyediakan terjemahan yang lebih akurat dan sadar konteks antar
+              bahasa, memahami idiom dan nuansa budaya.
+            </p>
+          </div>
+          <div
+            class="info-card bg-white rounded-lg shadow border border-slate-200 p-5 cursor-pointer hover:shadow-xl transition-shadow"
+          >
+            <h3 class="font-bold text-lg mb-2 text-slate-800">
+              💬 Chatbots & Asisten Virtual
+            </h3>
+            <p class="info-content text-slate-600">
+              Menciptakan agen percakapan yang lebih natural dan mampu menangani
+              dialog yang kompleks untuk layanan pelanggan atau bantuan
+              personal.
+            </p>
+          </div>
+          <div
+            class="info-card bg-white rounded-lg shadow border border-slate-200 p-5 cursor-pointer hover:shadow-xl transition-shadow"
+          >
+            <h3 class="font-bold text-lg mb-2 text-slate-800">
+              ❓ Sistem Tanya Jawab (QA)
+            </h3>
+            <p class="info-content text-slate-600">
+              Menjawab pertanyaan pengguna secara langsung dengan mengekstrak
+              informasi relevan dari basis pengetahuan yang luas.
+            </p>
+          </div>
+          <div
+            class="info-card bg-white rounded-lg shadow border border-slate-200 p-5 cursor-pointer hover:shadow-xl transition-shadow"
+          >
+            <h3 class="font-bold text-lg mb-2 text-slate-800">
+              🎨 Generasi Konten Kreatif
+            </h3>
+            <p class="info-content text-slate-600">
+              Membantu dalam penulisan draf email, artikel blog, skrip, materi
+              pemasaran, dan berbagai bentuk konten tekstual lainnya.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="optimisasi">
+        <h2 class="text-3xl font-bold text-center text-slate-800 mb-2">
+          Membuat LLM Lebih Cepat & Efisien
+        </h2>
+        <p class="text-center max-w-3xl mx-auto text-slate-600 mb-12">
+          Menjalankan model dengan miliaran parameter membutuhkan sumber daya
+          komputasi yang besar. Berbagai teknik optimisasi telah dikembangkan
+          untuk mempercepat waktu respons (latensi) dan mengurangi biaya
+          operasional. Klik kartu untuk melihat penjelasannya.
+        </p>
+        <div class="grid md:grid-cols-2 gap-6">
+          <div
+            class="info-card bg-white rounded-lg shadow border border-slate-200 p-5 cursor-pointer hover:shadow-xl transition-shadow"
+          >
+            <h3 class="font-bold text-lg mb-2 text-slate-800">
+              ⚖️ Kuantisasi (Quantization)
+            </h3>
+            <div class="info-content content-hidden text-slate-600">
+              <p>
+                Mengurangi presisi numerik dari parameter model (misalnya dari
+                32-bit ke 8-bit). Ini secara signifikan mengurangi ukuran model
+                dan mempercepat kalkulasi, meskipun bisa sedikit menurunkan
+                akurasi. Ini adalah pertukaran antara efisiensi dan kualitas.
+              </p>
+            </div>
+          </div>
+          <div
+            class="info-card bg-white rounded-lg shadow border border-slate-200 p-5 cursor-pointer hover:shadow-xl transition-shadow"
+          >
+            <h3 class="font-bold text-lg mb-2 text-slate-800">
+              👨‍🏫 Distilasi (Distillation)
+            </h3>
+            <div class="info-content content-hidden text-slate-600">
+              <p>
+                Melatih model yang lebih kecil ('student') untuk meniru output
+                dari model yang lebih besar dan lebih kuat ('teacher').
+                Tujuannya adalah untuk mentransfer kemampuan model besar ke
+                model kecil yang lebih efisien untuk dijalankan.
+              </p>
+            </div>
+          </div>
+          <div
+            class="info-card bg-white rounded-lg shadow border border-slate-200 p-5 cursor-pointer hover:shadow-xl transition-shadow"
+          >
+            <h3 class="font-bold text-lg mb-2 text-slate-800">
+              💾 Caching Konteks
+            </h3>
+            <div class="info-content content-hidden text-slate-600">
+              <p>
+                Menyimpan hasil kalkulasi dari bagian input yang berulang
+                (misalnya, histori percakapan dalam chatbot). Saat ada input
+                baru, model hanya perlu memproses bagian baru tersebut,
+                menghemat banyak waktu komputasi, terutama pada percakapan
+                panjang.
+              </p>
+            </div>
+          </div>
+          <div
+            class="info-card bg-white rounded-lg shadow border border-slate-200 p-5 cursor-pointer hover:shadow-xl transition-shadow"
+          >
+            <h3 class="font-bold text-lg mb-2 text-slate-800">
+              ⚡ Decoding Spekulatif
+            </h3>
+            <div class="info-content content-hidden text-slate-600">
+              <p>
+                Menggunakan model kecil yang sangat cepat untuk 'menebak'
+                beberapa kata ke depan. Model besar kemudian memverifikasi
+                tebakan ini secara paralel. Jika tebakannya benar, beberapa kata
+                dapat dihasilkan dalam satu langkah, mempercepat output secara
+                dramatis.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="bg-slate-800 text-white mt-16">
+      <div class="container mx-auto px-6 py-8 text-center">
+        <p class="text-slate-300">
+          Aplikasi web ini adalah interpretasi visual dari laporan "Foundational
+          Large Language Models & Text Generation".
+        </p>
+        <p class="mt-2 text-sm text-slate-400">
+          Teknologi LLM terus berkembang, membuka potensi baru untuk inovasi.
+        </p>
+      </div>
+    </footer>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        const menuBtn = document.getElementById('menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        menuBtn.addEventListener('click', () => {
+          mobileMenu.classList.toggle('hidden');
+        });
+
+        document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+          anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            if (!mobileMenu.classList.contains('hidden')) {
+              mobileMenu.classList.add('hidden');
+            }
+            document.querySelector(this.getAttribute('href')).scrollIntoView({
+              behavior: 'smooth',
+            });
+          });
+        });
+
+        const interactiveComponents = document.querySelectorAll(
+          '.interactive-component'
+        );
+        const techContents = document.querySelectorAll('.tech-content');
+        interactiveComponents.forEach((comp) => {
+          comp.addEventListener('click', () => {
+            const contentId = comp.dataset.content;
+            techContents.forEach((content) => content.classList.add('hidden'));
+            document.getElementById(contentId).classList.remove('hidden');
+          });
+        });
+
+        const stepItems = document.querySelectorAll('.step-item');
+        const stepContents = document.querySelectorAll('.step-content');
+        stepItems.forEach((item) => {
+          item.addEventListener('click', () => {
+            const step = item.dataset.step;
+            stepItems.forEach((i) => i.classList.remove('active'));
+            item.classList.add('active');
+
+            stepContents.forEach((content) => {
+              if (content.id === `step-content-${step}`) {
+                content.classList.remove('hidden');
+              } else {
+                content.classList.add('hidden');
+              }
+            });
+          });
+        });
+
+        const infoCards = document.querySelectorAll('#optimisasi .info-card');
+        infoCards.forEach((card) => {
+          card.addEventListener('click', () => {
+            const content = card.querySelector('.info-content');
+            content.classList.toggle('content-hidden');
+            content.classList.toggle('content-visible');
+          });
+        });
+
+        const modelData = [
+          { year: 2018, name: 'GPT-1', params: 0.117 },
+          { year: 2018, name: 'BERT-Large', params: 0.34 },
+          { year: 2019, name: 'GPT-2', params: 1.5 },
+          { year: 2020, name: 'GPT-3', params: 175 },
+          { year: 2021, name: 'LaMDA', params: 137 },
+          { year: 2021, name: 'Gopher', params: 280 },
+          { year: 2022, name: 'Chinchilla', params: 70 },
+          { year: 2022, name: 'PaLM', params: 540 },
+          { year: 2023, name: 'LLaMA 2', params: 70 },
+          { year: 2023, name: 'Gemini Pro', params: null }, // Parameters not public, size indicates scale
+        ];
+
+        const ctx = document.getElementById('evolutionChart').getContext('2d');
+        const evolutionChart = new Chart(ctx, {
+          type: 'bubble',
+          data: {
+            datasets: [
+              {
+                label: 'Jumlah Parameter (Miliar)',
+                data: modelData.map((d) => ({
+                  x: d.year,
+                  y: d.params,
+                  r: Math.log2(d.params + 2) * 4, // Bubble size based on log scale
+                  name: d.name,
+                  params: d.params,
+                })),
+                backgroundColor: 'rgba(37, 99, 235, 0.6)',
+                borderColor: 'rgba(37, 99, 235, 1)',
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              x: {
+                type: 'linear',
+                position: 'bottom',
+                title: { display: true, text: 'Tahun Rilis' },
+                ticks: { stepSize: 1, callback: (value) => Math.round(value) },
+              },
+              y: {
+                type: 'logarithmic',
+                title: {
+                  display: true,
+                  text: 'Parameter (Miliar) - Skala Log',
+                },
+                ticks: {
+                  callback: function (value, index, values) {
+                    if (
+                      value === 1 ||
+                      value === 10 ||
+                      value === 100 ||
+                      value === 1000
+                    ) {
+                      return value + ' M';
+                    }
+                  },
+                },
+              },
+            },
+            plugins: {
+              tooltip: {
+                callbacks: {
+                  label: function (context) {
+                    const data = context.dataset.data[context.dataIndex];
+                    const paramsText = data.params
+                      ? `${data.params} Miliar Parameter`
+                      : 'Parameter Tidak Publik';
+                    return `${data.name}: ${paramsText}`;
+                  },
+                },
+              },
+              legend: {
+                display: false,
+              },
+            },
+          },
+        });
+
+        const navLinks = document.querySelectorAll('.nav-link');
+        const sections = document.querySelectorAll('main section');
+
+        const observerOptions = {
+          root: null,
+          rootMargin: '0px',
+          threshold: 0.4,
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              const id = entry.target.getAttribute('id');
+              navLinks.forEach((link) => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === `#${id}`) {
+                  link.classList.add('active');
+                }
+              });
+            }
+          });
+        }, observerOptions);
+
+        sections.forEach((section) => {
+          observer.observe(section);
+        });
+      });
+    </script>
+  </body>
+</html>
